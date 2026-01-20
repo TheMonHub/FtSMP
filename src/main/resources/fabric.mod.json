@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "ftsmp",
+  "version": "${version}",
+  "name": "FtSMP",
+  "description": "personal server mod for furryteens SMP",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "org.themonhub.ftsmp.Ftsmp"
+    ]
+  },
+  "mixins": [
+    "ftsmp.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}

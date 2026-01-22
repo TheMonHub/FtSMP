@@ -14,7 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import java.time.*;
 
 public class Ftsmp implements ModInitializer {
-    static int lastCheckedSeconds = secondsUntilNextUtcMidnight();
+    static int lastCheckedSeconds = secondsUntilNextUtcMidnight() - 1;
     static boolean didMinBroadcast = false;
     static boolean didFiveMinBroadcast = false;
     static boolean didTenMinBroadcast = false;
@@ -36,7 +36,7 @@ public class Ftsmp implements ModInitializer {
     }
 
     private static void onTick(MinecraftServer minecraftServer) {
-        int secondsLeft = secondsUntilNextUtcMidnight();
+        int secondsLeft = secondsUntilNextUtcMidnight() - 1;
 
         if (Ftsmp.lastCheckedSeconds != secondsLeft) {
             lastCheckedSeconds = secondsLeft;
@@ -44,7 +44,7 @@ public class Ftsmp implements ModInitializer {
             // Behold! Ugly if-else nest!
             if (secondsLeft <= 0) {
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cShutting down..."), false);
-                minecraftServer.close();
+                minecraftServer.stopServer();
             } else if (secondsLeft == 1) {
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cServer shutting down in 1 second!"), false);
             } else if (secondsLeft <= 10) {
@@ -53,7 +53,7 @@ public class Ftsmp implements ModInitializer {
                 didMinBroadcast = true;
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cServer shutting down in 1 minute!"), false);
             } else if (secondsLeft <= 300 && !didFiveMinBroadcast) {
-                didTenMinBroadcast = true;
+                didFiveMinBroadcast = true;
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cServer shutting down in 5 minutes!"), false);
             } else if (secondsLeft <= 600 && !didTenMinBroadcast) {
             didTenMinBroadcast = true;

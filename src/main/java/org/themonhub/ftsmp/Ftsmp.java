@@ -1,13 +1,24 @@
 package org.themonhub.ftsmp;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.*;
+import java.util.HashSet;
+import java.util.UUID;
 
 public class Ftsmp implements ModInitializer {
+    public static final String MOD_ID = "ftsmp";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+    public static final HashSet<UUID> isVoidDeath = new HashSet<>();
+
     static int lastCheckedSeconds = secondsUntilNextUtcMidnight() - 1;
     static boolean didMinBroadcast = false;
     static boolean didFiveMinBroadcast = false;
@@ -25,8 +36,13 @@ public class Ftsmp implements ModInitializer {
 
     @Override
     public void onInitialize() {
-        System.out.println("furryteens SMP!");
+        Ftsmp.LOGGER.info("furryteens SMP is starting up!");
         ServerTickEvents.END_SERVER_TICK.register(Ftsmp::onTick);
+        ServerPlayerEvents.LEAVE.register(Ftsmp::onLeave);
+    }
+
+    private static void onLeave(ServerPlayer player) {
+        isVoidDeath.remove(player.getUUID());
     }
 
     private static void onTick(MinecraftServer minecraftServer) {

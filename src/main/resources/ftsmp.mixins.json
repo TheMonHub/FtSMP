@@ -4,6 +4,8 @@
   "package": "org.themonhub.ftsmp.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "RememberVoidDeath",
+    "RestorePlayer"
   ],
   "client": [
   ],

@@ -1,5 +1,6 @@
 package org.themonhub.ftsmp;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -49,14 +50,7 @@ public class Ftsmp implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("ftsmp")
                     .then(Commands.literal("help")
-                            .executes(ctx -> {
-                                var source = ctx.getSource();
-                                var node = dispatcher.getRoot().getChild("ftsmp");
-                                dispatcher.getSmartUsage(node, source).forEach((k, v) ->
-                                        source.sendSuccess(() -> Component.literal("/ftsmp " + v), false)
-                                );
-                                return 1;
-                            })
+                            .executes(ctx -> executeHelpCommand(ctx, dispatcher))
                     )
                     .then(Commands.literal("version").executes(Ftsmp::executeVersionCommand))
             );
@@ -72,6 +66,15 @@ public class Ftsmp implements ModInitializer {
 
     private static int executeVersionCommand(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
         commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.literal("FtSMP version: " + getVersion()), false);
+        return 1;
+    }
+
+    private static int executeHelpCommand(CommandContext<CommandSourceStack> context, CommandDispatcher<CommandSourceStack> dispatcher) {
+        var source = context.getSource();
+        var node = dispatcher.getRoot().getChild("ftsmp");
+        dispatcher.getSmartUsage(node, source).forEach((k, v) ->
+                source.sendSuccess(() -> Component.literal("/ftsmp " + v), false)
+        );
         return 1;
     }
 

@@ -54,7 +54,7 @@ public class Ftsmp implements ModInitializer {
             // Behold! Ugly if-else nest!
             if (secondsLeft <= 0) {
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cShutting down..."), false);
-                minecraftServer.stopServer();
+                minecraftServer.halt(false);
             } else if (secondsLeft == 1) {
                 minecraftServer.getPlayerList().broadcastSystemMessage(Component.literal("§l§cServer shutting down in 1 second!"), false);
             } else if (secondsLeft <= 10) {

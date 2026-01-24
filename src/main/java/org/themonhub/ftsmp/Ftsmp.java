@@ -1,23 +1,29 @@
 package org.themonhub.ftsmp;
 
+import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.*;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.UUID;
 
 public class Ftsmp implements ModInitializer {
     public static final String MOD_ID = "ftsmp";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-    public static final HashSet<UUID> isVoidDeath = new HashSet<>();
+    public static final HashMap<UUID, Inventory> isVoidDeath = new HashMap<>();
 
     static int lastCheckedSeconds = secondsUntilNextUtcMidnight() - 1;
     static boolean didMinBroadcast = false;
@@ -39,6 +45,34 @@ public class Ftsmp implements ModInitializer {
         Ftsmp.LOGGER.info("furryteens SMP is starting up!");
         ServerTickEvents.END_SERVER_TICK.register(Ftsmp::onTick);
         ServerPlayerEvents.LEAVE.register(Ftsmp::onLeave);
+
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+            dispatcher.register(Commands.literal("ftsmp")
+                    .then(Commands.literal("help")
+                            .executes(ctx -> {
+                                var source = ctx.getSource();
+                                var node = dispatcher.getRoot().getChild("ftsmp");
+                                dispatcher.getSmartUsage(node, source).forEach((k, v) ->
+                                        source.sendSuccess(() -> Component.literal("/ftsmp " + v), false)
+                                );
+                                return 1;
+                            })
+                    )
+                    .then(Commands.literal("version").executes(Ftsmp::executeVersionCommand))
+            );
+        });
+    }
+
+    public static String getVersion() {
+        return FabricLoader.getInstance()
+                .getModContainer(MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString())
+                .orElse("UNKNOWN");
+    }
+
+    private static int executeVersionCommand(CommandContext<CommandSourceStack> commandSourceStackCommandContext) {
+        commandSourceStackCommandContext.getSource().sendSuccess(() -> Component.literal("FtSMP version: " + getVersion()), false);
+        return 1;
     }
 
     private static void onLeave(ServerPlayer player) {

@@ -13,13 +13,13 @@ import org.themonhub.ftsmp.Ftsmp;
 
 @Mixin(net.minecraft.server.level.ServerPlayer.class)
 public class RememberVoidDeath {
-    @Inject(method = "die", at = @At(value = "HEAD"))
+    @Inject(method = "die", at = @At("HEAD"))
     private void rememberVoidDeath(DamageSource source, CallbackInfo ci) {
         if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
             ServerPlayer player = (ServerPlayer)(Object)this;
             ResourceKey<Level> dim = player.level().dimension();
             if (dim != Level.END) {
-                Ftsmp.isVoidDeath.add(player.getUUID());
+                Ftsmp.isVoidDeath.put(player.getUUID(), player.getInventory());
             }
         }
     }

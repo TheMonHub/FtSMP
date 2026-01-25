@@ -126,6 +126,9 @@ public class Ftsmp implements ModInitializer {
                         .append(Component.literal(" to check them out!")),
                 false
         );
+        if (noticed.size() >= 30) {
+            player1.sendSystemMessage(Component.literal("§c§lYour message inbox is full! Please check and clear your messages to receive new ones."));
+        }
     }
 
     private static void runNotice(MinecraftServer server, UUID player) {
@@ -154,7 +157,7 @@ public class Ftsmp implements ModInitializer {
                                                 new ClickEvent.RunCommand("/ftsmp clear")
                                         ))
                         )
-                        .append(Component.literal(" to clear all of your message!")),
+                        .append(Component.literal(" to clear your inbox!")),
                 false
         );
         PersistentData.get(server).clearNotices(player);
@@ -162,13 +165,13 @@ public class Ftsmp implements ModInitializer {
 
     private static int executeClearCommand(CommandContext<CommandSourceStack> commandContext) {
         PersistentData.get(commandContext.getSource().getServer()).clearNotices(Objects.requireNonNull(commandContext.getSource().getPlayer()).getUUID());
-        commandContext.getSource().sendSuccess(() -> Component.literal("Cleared all of your message!"), false);
+        commandContext.getSource().sendSuccess(() -> Component.literal("Cleared your inbox!"), false);
         return 1;
     }
 
     private static int executeCheckCommand(CommandContext<CommandSourceStack> commandContext) {
         justChecked.add(Objects.requireNonNull(commandContext.getSource().getPlayer()).getUUID());
-        commandContext.getSource().sendSuccess(() -> Component.literal("Checking message..."), false);
+        commandContext.getSource().sendSuccess(() -> Component.literal("Checking inbox..."), false);
         return 1;
     }
 
@@ -189,7 +192,7 @@ public class Ftsmp implements ModInitializer {
             }
 
             if (uuid == callerId) {
-                commandContext.getSource().sendFailure(Component.literal("Why are you trying to notice yourself...?"));
+                commandContext.getSource().sendFailure(Component.literal("Why are you trying to message yourself...?"));
                 return 1;
             }
 
@@ -214,12 +217,12 @@ public class Ftsmp implements ModInitializer {
                 }
             }
 
-            if (dat.size() >= 25) {
+            if (dat.size() >= 30) {
                 commandContext.getSource().sendFailure(Component.literal(target.name() + "'s message is full!"));
                 return 1;
             }
 
-            commandContext.getSource().sendSuccess(() -> Component.literal("Noticing " + target.name() + "§r!"), false);
+            commandContext.getSource().sendSuccess(() -> Component.literal("Messaged " + target.name() + "§r!"), false);
 
             ServerPlayer targetPlayer = commandContext.getSource().getServer().getPlayerList().getPlayer(uuid);
             if (targetPlayer != null) {

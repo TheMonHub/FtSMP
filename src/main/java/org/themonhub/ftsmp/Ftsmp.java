@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Pair;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
@@ -19,9 +20,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.player.Inventory;
+import org.geysermc.geyser.api.GeyserApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
 import java.time.*;
 import java.util.*;
 
@@ -38,10 +41,29 @@ public class Ftsmp implements ModInitializer {
     static boolean didMinBroadcast = false;
     static boolean didFiveMinBroadcast = false;
     static boolean didTenMinBroadcast = false;
-    static int gracePeriod = 120;
+    static long gracePeriod = LocalTime.now().toEpochSecond(LocalDate.EPOCH, ZoneOffset.UTC) + 180;
+    static boolean graceLog = false;
 
     static HashSet<UUID> justJoined = new HashSet<>();
     static HashSet<UUID> justChecked = new HashSet<>();
+
+    public static final HashMap<String, Pair<String, String>> memberList = new HashMap<>() {{
+        put("Mono", Pair.of("TheMonHub", "DakariMona"));
+        put("Sasha", Pair.of("Tsar_AlexanderII", "DailyWire1960"));
+        put("Ziggy", Pair.of("HumbleCreator101", null));
+        put("Ash", Pair.of("Niraxes", null));
+        put("Max", Pair.of("Brasskicker69", null));
+        put("Leo", Pair.of(null, "mozzamoonart"));
+        put("Kip", Pair.of("subwayboi", null));
+        put("Torrey", Pair.of("Ax0lotls1519", "Axolotllabs"));
+        put("Bommel", Pair.of("bommelnator", "blockflurry"));
+        put("Nyxion", Pair.of("NyxionUwU", "FoxDefender"));
+        put("Rushb", Pair.of(null, "rushb1331uwu"));
+        put("MinMin", Pair.of(null, "Ledonaceitunio"));
+        put("Ibm", Pair.of(null, "SpectralOne400"));
+        put("Bug", Pair.of("zigzag183", null));
+        put("Klipp", Pair.of("klipp3k", "klipp3k"));
+    }};
 
     public static int secondsUntilNextUtcMidnight() {
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
@@ -70,7 +92,21 @@ public class Ftsmp implements ModInitializer {
                 .then(Commands.literal("send").then(Commands.argument("targetPlayer", GameProfileArgument.gameProfile()).then(Commands.argument("message", StringArgumentType.string()).executes(Ftsmp::executeNoticeCommand))))
                 .then(Commands.literal("check").executes(Ftsmp::executeCheckCommand))
                 .then(Commands.literal("clear").executes(Ftsmp::executeClearCommand))
+                .then(Commands.literal("list").executes(Ftsmp::executeListCommand))
         ));
+    }
+
+    private static int executeListCommand(CommandContext<CommandSourceStack> commandContext) {
+        var source = commandContext.getSource();
+
+        source.sendSuccess(() -> Component.literal("The members of the furryteens SMP are:"), false);
+        for (String nickname : memberList.keySet()) {
+            Pair<String, String> names = memberList.get(nickname);
+            String java = names.getSecond() != null ? " (Java username: " + names.getSecond() + ")" : "";
+            String bedrock = names.getFirst() != null ? " (Bedrock username: " + names.getFirst() + ")" : "";
+            source.sendSuccess(() -> Component.literal("- " + nickname + java + bedrock), false);
+        }
+        return 1;
     }
 
     private static void onJoin(ServerPlayer serverPlayer) {
@@ -111,11 +147,16 @@ public class Ftsmp implements ModInitializer {
         if (player1 == null) {
             return;
         }
-        if (noticed.isEmpty()) {
-            player1.sendSystemMessage(Component.literal("§eWelcome! You didn't get any message while you were offline."));
-            return;
+        if (GeyserApi.api().connectionByUuid(player) != null) {
+            player1.sendSystemMessage(Component.literal("§c§lMIGRATION: Please link your bedrock and java accounts using this link: ").append(
+                    Component.literal("https://link.geysermc.org")
+                            .setStyle(Style.EMPTY.withClickEvent(
+                                    new ClickEvent.OpenUrl(URI.create("https://link.geysermc.org"))
+                            ))
+            ));
+            player1.sendSystemMessage(Component.literal("§c§In the future, any players (with a bedrock account specified in the member list) without linked accounts will not be able to join the server!"));
         }
-        player1.sendSystemMessage(Component.literal("§eWelcome! You got " + noticed.size() + " messages left unread."));
+        player1.sendSystemMessage(Component.literal("§eYou got " + noticed.size() + " messages left unread."));
         player1.sendSystemMessage(
                 Component.literal("§e§lRun ")
                         .append(
@@ -266,9 +307,13 @@ public class Ftsmp implements ModInitializer {
 
         if (Ftsmp.lastCheckedSeconds != secondsLeft) {
             lastCheckedSeconds = secondsLeft;
-            if (gracePeriod > 0) {
-                gracePeriod -= (Ftsmp.lastCheckedSeconds - secondsLeft);
+
+            if (gracePeriod > LocalTime.now().toEpochSecond(LocalDate.EPOCH, ZoneOffset.UTC)) {
                 return;
+            }
+            if (!graceLog) {
+                graceLog = true;
+                Ftsmp.LOGGER.info("Grace period over, starting shutdown countdown.");
             }
 
             // Behold! Ugly if-else nest!

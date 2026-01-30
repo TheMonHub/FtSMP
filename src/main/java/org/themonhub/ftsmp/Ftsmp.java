@@ -38,6 +38,7 @@ public class Ftsmp implements ModInitializer {
     static boolean didMinBroadcast = false;
     static boolean didFiveMinBroadcast = false;
     static boolean didTenMinBroadcast = false;
+    static int gracePeriod = 120;
 
     static HashSet<UUID> justJoined = new HashSet<>();
     static HashSet<UUID> justChecked = new HashSet<>();
@@ -211,13 +212,13 @@ public class Ftsmp implements ModInitializer {
             var dat = PersistentData.get(commandContext.getSource().getServer()).getNoticed(uuid);
 
             if (dat.get(callerName.getString()) != null) {
-                if (dat.get(callerName.getString()).size() >= 5) {
-                    commandContext.getSource().sendFailure(Component.literal("You have reached the maximum number of messages you can send without them checking! (5)"));
+                if (dat.get(callerName.getString()).size() >= 10) {
+                    commandContext.getSource().sendFailure(Component.literal("You have reached the maximum number of messages you can send without them checking!"));
                     return 1;
                 }
             }
 
-            if (dat.size() >= 30) {
+            if (dat.size() >= 50) {
                 commandContext.getSource().sendFailure(Component.literal(target.name() + "'s message is full!"));
                 return 1;
             }
@@ -240,6 +241,7 @@ public class Ftsmp implements ModInitializer {
                 );
             }
             PersistentData.get(commandContext.getSource().getServer()).addNoticedPlayer(uuid, callerName.getString(), msg);
+            Ftsmp.LOGGER.info("MSG: Player {} sent message to {}: {}", callerName.getString(), target.name(), msg);
             return 1;
         }
         commandContext.getSource().sendFailure(Component.literal("No players were found!"));
@@ -264,6 +266,10 @@ public class Ftsmp implements ModInitializer {
 
         if (Ftsmp.lastCheckedSeconds != secondsLeft) {
             lastCheckedSeconds = secondsLeft;
+            if (gracePeriod > 0) {
+                gracePeriod -= (Ftsmp.lastCheckedSeconds - secondsLeft);
+                return;
+            }
 
             // Behold! Ugly if-else nest!
             if (secondsLeft <= 0) {

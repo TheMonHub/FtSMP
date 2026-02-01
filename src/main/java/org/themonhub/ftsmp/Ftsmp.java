@@ -156,19 +156,21 @@ public class Ftsmp implements ModInitializer {
             ));
             player1.sendSystemMessage(Component.literal("§c§In the future, any players (with a bedrock account specified in the member list) without linked accounts will not be able to join the server!"));
         }
-        player1.sendSystemMessage(Component.literal("§eYou got " + noticed.size() + " messages left unread."));
-        player1.sendSystemMessage(
-                Component.literal("§e§lRun ")
-                        .append(
-                                Component.literal("§n/ftsmp check§r§e§l")
-                                        .setStyle(Style.EMPTY.withClickEvent(
-                                                new ClickEvent.RunCommand("/ftsmp check")
-                                        ))
-                        )
-                        .append(Component.literal(" to check them out!")),
-                false
-        );
-        if (noticed.size() >= 30) {
+        if (!noticed.isEmpty()) {
+            player1.sendSystemMessage(Component.literal("§eYou got " + noticed.size() + " messages left unread."));
+            player1.sendSystemMessage(
+                    Component.literal("§e§lRun ")
+                            .append(
+                                    Component.literal("§n/ftsmp check§r§e§l")
+                                            .setStyle(Style.EMPTY.withClickEvent(
+                                                    new ClickEvent.RunCommand("/ftsmp check")
+                                            ))
+                            )
+                            .append(Component.literal(" to check them out!")),
+                    false
+            );
+        }
+        if (noticed.size() >= 50) {
             player1.sendSystemMessage(Component.literal("§c§lYour message inbox is full! Please check and clear your messages to receive new ones."));
         }
     }
